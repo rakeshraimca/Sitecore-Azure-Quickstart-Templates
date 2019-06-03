@@ -9,7 +9,6 @@
     "masterSqlDatabaseNameTidy": "[toLower(trim(parameters('masterSqlDatabaseName')))]",
     "cdWebAppNameTidy": "[toLower(trim(parameters('cdWebAppName')))]",
     "cmWebAppNameTidy": "[toLower(trim(parameters('cmWebAppName')))]"
-    
   },
   "parameters": {
     "standard": {
@@ -26,13 +25,13 @@
         "masterSqlDatabaseName": null,
         "cdWebAppName": null,
         "cmWebAppName": null
-
       }
     },
     "extension": {
       "type": "secureObject",
       "defaultValue": {
         "cdSxaMsDeployPackageUrl": null,
+        "cmSxaMsDeployPackageUrl": null,
         "speMsDeployPackageUrl": null
       }
     },
@@ -80,10 +79,10 @@
       "minLength": 1,
       "defaultValue": "[coalesce(parameters('standard').cdWebAppName, concat(parameters('deploymentId'), '-cd'))]"
     },
-    "cmWebAppName": {	
-      "type": "string",	
-      "minLength": 1,	
-      "defaultValue": "[coalesce(parameters('standard').cmWebAppName, concat(parameters('deploymentId'), '-cm'))]"	
+    "cmWebAppName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[coalesce(parameters('standard').cmWebAppName, concat(parameters('deploymentId'), '-cm'))]"
     },
     "speMsDeployPackageUrl": {
       "type": "securestring",
@@ -94,10 +93,15 @@
       "type": "securestring",
       "minLength": 1,
       "defaultValue": "[parameters('extension').cdSxaMsDeployPackageUrl]"
+    },
+    "cmSxaMsDeployPackageUrl": {
+      "type": "securestring",
+      "minLength": 1,
+      "defaultValue": "[parameters('extension').cmSxaMsDeployPackageUrl]"
     }
   },
   "resources": [
-       {
+    {
       "name": "[concat(variables('cmWebAppNameTidy'), '/', 'MSDeploy')]",
       "type": "Microsoft.Web/sites/extensions",
       "location": "[parameters('location')]",
@@ -113,11 +117,21 @@
               "Core Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', variables('sqlServerFqdnTidy'), ',1433;Initial Catalog=',variables('coreSqlDatabaseNameTidy'),';User Id=', parameters('sqlServerLogin'), ';Password=', parameters('sqlServerPassword'), ';')]",
               "Master Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', variables('sqlServerFqdnTidy'), ',1433;Initial Catalog=',variables('masterSqlDatabaseNameTidy'),';User Id=', parameters('sqlServerLogin'), ';Password=', parameters('sqlServerPassword'), ';')]"
             }
+          },
+          {
+            "packageUri": "[parameters('cmSxaMsDeployPackageUrl')]",
+            "dbType": "SQL",
+            "connectionString": "[concat('Data Source=tcp:', variables('sqlServerFqdnTidy'), ',1433;Initial Catalog=master;User Id=', parameters('sqlServerLogin'), ';Password=', parameters('sqlServerPassword'), ';')]",
+            "setParameters": {
+              "Application Path": "[variables('cmWebAppNameTidy')]",
+              "Core Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', variables('sqlServerFqdnTidy'), ',1433;Initial Catalog=',variables('coreSqlDatabaseNameTidy'),';User Id=', parameters('sqlServerLogin'), ';Password=', parameters('sqlServerPassword'), ';')]",
+              "Master Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', variables('sqlServerFqdnTidy'), ',1433;Initial Catalog=',variables('masterSqlDatabaseNameTidy'),';User Id=', parameters('sqlServerLogin'), ';Password=', parameters('sqlServerPassword'), ';')]"
+            }
           }
         ]
       }
     },
-       {
+    {
       "name": "[concat(variables('cdWebAppNameTidy'), '/', 'MSDeploy')]",
       "type": "Microsoft.Web/sites/extensions",
       "location": "[parameters('location')]",
